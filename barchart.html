@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+	<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+	    <div id="viz"></div>
+    <script type="text/javascript">
+		d = document;
+		e = d.documentElement;
+		var barwidth = 50;
+		var barnum = 0;
+		var boxheight = e.clientHeight;
+		var modbox = 6*boxheight/8;
+		var boxwidth = e.clientWidth;
+		var modwid = 6*boxwidth/8;
+		var datam = new Array;
+	var newSVG = d3.select("#viz")
+		.append("svg")
+		.attr("width", boxwidth)
+		.attr("height", boxheight)
+	newSVG.append("text")
+		.attr("font-size", "28px")
+		.attr("fill", "black")
+	    .attr("x", boxwidth/2)
+		.attr("y", (boxheight/8) - 20)
+	    .style("text-anchor","middle")
+	    .text("Subusers by Plan Category");
+	newSVG.append("circle")
+		.attr("cx",boxwidth/8 + 20)
+		.attr("cy",boxheight/8 - 25)
+		.attr("r",20)
+		.style("fill",'whitesmoke')
+		.style('stroke','black');
+	newSVG.append("circle")
+		.attr("cx",boxwidth/8 + 70)
+		.attr("cy",boxheight/8 - 25)
+		.attr("r",20)
+		.style("fill",'whitesmoke')
+		.style('stroke','black')
+		.on("mousedown", ybutton);	
+	d3.csv('https://dl.dropbox.com/s/oqtkxgfpiqi1dc4/bars.csv?dl=0', function(dataset) {  // NEW
+		var iter = 0;
+		var iter2 = 0;
+		var newGroup = newSVG.append('g');
+		var max = 0;
+		var scaler = 1;
+	  dataset.forEach(function(d) {
+		  iter2 = iter2 + 1;
+		  if (d.x > max){
+			  max = d.x;  
+			  scaler = modbox/max; //six-eigths of the screen's height divided by the largest value.
+		  };
+		  barnum = iter2;
+		  }
+	  );
+	  barwidth = (3*boxwidth)/((6*iter2) + 2);
+	  newGroup.append("rect")
+	  	  .attr('y', boxheight/8)
+	      .attr('x', boxwidth/8)
+	      .attr('height', modbox)
+	      .attr('width', modwid)
+	      .style('fill', 'whitesmoke')
+	      .style('stroke', 'black');
+	  for (i = 0; i < 7; i++) { 
+  	  	newGroup.append("line")
+  		  	.attr("x1",boxwidth/8)
+  		  	.attr("x2",7*boxwidth/8)
+  		  	.attr("y1",(i+2)*boxheight/8)
+  		  	.attr("y2",(i+2)*boxheight/8)
+  		  	.style('stroke', 'gray')
+  		  	.style('stroke-dasharray', 5);  
+	    newGroup.append('text')
+  			.attr("font-size", "12px")
+  			.attr("fill", "black")
+			.attr('id',"t"+i)
+  	    	.attr("x", (boxwidth/8) - 2)
+  			.attr("y", ((i+1)*boxheight/8) + 3)
+  	    	.style("text-anchor","end")
+  	    	.text(Math.round(max - (i*(max/6))));			 
+		  };		    
+	  dataset.forEach(function(d) {
+		  iter = iter + 1; 
+		  datam[(iter-1)] = [parseInt(d.x), parseInt(d.y)];
+		  console.log(datam)
+		  newGroup.append('rect')
+		  	.attr('y', (7*boxheight/8) - scaler*d.x) //move down seven eigths of scrn, then up by the length of the bar
+		  	.attr('x', (boxwidth/8) + (iter * barwidth/2) + ((iter-1) * barwidth)) //one eigth screen + gaps + bars
+		    .attr('id', "r" + iter)
+		  	.attr('width', barwidth)
+		  	.attr('height', scaler*d.x)
+		  	.style('fill', "white")
+		    .style('stroke', "black")
+		    .on("mousedown", animate);
+		  newGroup.append('text')
+  			.attr("font-size", "10px")
+  			.attr("fill", "black")
+  	    	.attr("x", (boxwidth/8) + ((iter + 1) * barwidth/2) + ((iter-1) * barwidth))
+  			.attr("y", (7*boxheight/8) + 10)
+  	    	.style("text-anchor","middle")
+  	    	.text(d.n);
+		  });                         // NEW
+	  });
+	  
+	  function animate() {
+		  var origheight = d3.select(this).attr("height")
+		  var origy = d3.select(this).attr("y")
+		  var newheight = Math.random()*100
+	      d3.select(this).transition()	
+	          .duration(1000)
+	          .attr("height", newheight)
+		  	  .attr("y", (7*boxheight/8) - newheight)
+	        .transition()
+	          .delay(1000)
+	          .attr("height", origheight)
+		  	  .attr("y", origy) 
+	
+	  }; 
+	  
+	  function ybutton() {
+		  var newval = 100;
+		  var newmax = 0;
+		  var newscaler = 0;
+		  for(i = 1; i <= barnum; i++){
+			  if (newmax < datam[i-1][1]){
+				  console.log(newmax + " < " + datam[i-1][1] + " evaluates to: " + (newmax < datam[i-1][1]));
+				  newmax = datam[i-1][1]; 
+				  newscaler = modbox/newmax; //six-eigths of the screen's height divided by the largest value.
+			  }
+		  };
+		  for(i = 1; i <= barnum; i++){
+			  newval = datam[i-1][1];
+			  d3.select("#r" + i).transition()
+			     .duration(1000)
+			     .attr('height', newval * newscaler)
+			     .attr('y', 7*boxheight/8 - (newval * newscaler));				
+		  }; 
+		  for(i = 0; i < 7; i++){
+		  	d3.select("#t" + i).transition()
+			 	.text(Math.round(newmax - (i*(newmax/6))));
+		  };
+		  };
+	  	 	  
+    </script>
+</body>
+</html>

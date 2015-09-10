@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+</head>
+<body>
+    <div id="viz"></div>
+    <script type="text/javascript">
+
+	var newSVG = d3.select("#viz")
+    	.append("svg")
+    	.attr("width", 1000)
+    	.attr("height", 1000);   
+
+	d3.csv('https://dl.dropbox.com/s/2b5jh6uzqfd2y8j/circles.csv?dl=0', function(dataset) {  // NEW
+	  dataset.forEach(function(d) {                    // NEW
+	    newSVG.append('circle') 
+		  .attr('cx', d.cx)
+		  .attr('cy', d.cy)
+		  .attr('r', d.r)
+		  .style('fill', d.color)
+		  .style('stroke', "black")
+		  .on("mousedown", animate);
+		  });                         // NEW
+	  });
+	  
+	  function animate() {
+	      d3.select(this).transition()
+	          .duration(1000)
+	          .attr("r", Math.random()*100)
+	        .transition()
+	          .delay(1000)
+	          .attr("r", 50);
+	  }; 
+    </script>
+</body>
+</html>
